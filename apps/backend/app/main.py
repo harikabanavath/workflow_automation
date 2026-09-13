@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .settings import settings
+from .api import rbac_middleware, router
 
 
 app = FastAPI(title="Workflow Automation API", version="0.1.0")
@@ -15,6 +16,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.middleware("http")(rbac_middleware)
+app.include_router(router)
 
 
 @app.get("/health", tags=["system"])

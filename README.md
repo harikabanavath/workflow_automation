@@ -36,6 +36,18 @@ Templates contain `fields`, `rules`, and ordered `approval_steps`. Supported fie
 
 Unit tests live in `apps/backend/tests/test_state_machine.py` and cover the happy path, invalid transitions, approver authorization, rejection, multi-step approval ordering, and submission validation.
 
+## REST API and access control
+
+The backend exposes:
+
+- `POST /api/templates` and `GET /api/templates`
+- `POST /api/templates/{template_id}/instances` to submit a run
+- `GET /api/instances/{instance_id}` for current status
+- `POST /api/instances/{instance_id}/approve` and `/reject`
+- `GET /api/instances/{instance_id}/audit`
+
+Protected endpoints require `X-Role: requester`, `approver`, or `admin`; `X-Actor` identifies the user in audit events. Requesters can submit and inspect status, approvers can review and inspect status/audit, and admins can use all endpoints. Submissions require an `Idempotency-Key`; repeating the same key with the same canonical payload returns the original instance, while reusing it with a different payload returns `409 Conflict`.
+
 ## Run locally with Docker Compose
 
 ```bash
