@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/workflow-template.schema.json",
+  "title": "Workflow Template",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["key", "name", "version", "fields", "approval_steps"],
+  "properties": {
+    "key": { "type": "string", "minLength": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "version": { "type": "integer", "minimum": 1 },
+    "description": { "type": "string" },
+    "fields": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/formField" } },
+    "rules": { "type": "array", "items": { "$ref": "#/$defs/conditionalRule" } },
+    "approval_steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/approvalStep" } }
+  },
+  "$defs": {
+    "option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "label"],
+      "properties": { "value": { "type": "string" }, "label": { "type": "string" } }
+    },
+    "formField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "label", "type"],
+      "properties": {
+        "key": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "label": { "type": "string" },
+        "type": { "enum": ["text", "dropdown", "file", "approver-picker"] },
+        "required": { "type": "boolean", "default": false },
+        "description": { "type": ["string", "null"] },
+        "placeholder": { "type": ["string", "null"] },
+        "options": { "type": "array", "items": { "$ref": "#/$defs/option" } },
+        "accept": { "type": "array", "items": { "type": "string" } },
+        "multiple": { "type": "boolean", "default": false }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "operator"],
+      "properties": {
+        "field": { "type": "string" },
+        "operator": { "enum": ["equals", "not_equals", "in", "not_in", "exists", "contains"] },
+        "value": {}
+      }
+    },
+    "conditionalRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "when", "effect", "target"],
+      "properties": {
+        "id": { "type": "string" },
+        "when": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/condition" } },
+        "effect": { "enum": ["show", "hide", "require", "skip"] },
+        "target": { "type": "string" },
+        "match": { "enum": ["all", "any"], "default": "all" }
+      }
+    },
+    "approvalStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "order"],
+      "anyOf": [{ "required": ["approver_field"] }, { "required": ["approver_role"] }],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "name": { "type": "string" },
+        "approver_field": { "type": ["string", "null"] },
+        "approver_role": { "type": ["string", "null"] },
+        "required": { "type": "boolean", "default": true },
+        "order": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "key": "equipment-request",
+  "name": "Equipment Request",
+  "version": 1,
+  "description": "Request equipment with budget-aware approval routing.",
+  "fields": [
+    {
+      "key": "request_title",
+      "label": "Request title",
+      "type": "text",
+      "required": true,
+      "placeholder": "e.g. New laptop for design team"
+    },
+    {
+      "key": "equipment_type",
+      "label": "Equipment type",
+      "type": "dropdown",
+      "required": true,
+      "options": [
+        { "value": "laptop", "label": "Laptop" },
+        { "value": "monitor", "label": "Monitor" },
+        { "value": "phone", "label": "Phone" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "key": "justification",
+      "label": "Business justification",
+      "type": "text",
+      "required": true
+    },
+    {
+      "key": "quote",
+      "label": "Vendor quote",
+      "type": "file",
+      "required": false,
+      "accept": ["application/pdf", "image/*"]
+    },
+    {
+      "key": "manager_approver",
+      "label": "Manager approver",
+      "type": "approver-picker",
+      "required": true
+    },
+    {
+      "key": "finance_approver",
+      "label": "Finance approver",
+      "type": "approver-picker",
+      "required": false
+    },
+    {
+      "key": "estimated_cost",
+      "label": "Estimated cost",
+      "type": "text",
+      "required": true
+    }
+  ],
+  "rules": [
+    {
+      "id": "quote-for-expensive-equipment",
+      "when": [
+        { "field": "estimated_cost", "operator": "equals", "value": "over-1000" }
+      ],
+      "effect": "require",
+      "target": "quote"
+    },
+    {
+      "id": "finance-approval-for-expensive-equipment",
+      "when": [
+        { "field": "estimated_cost", "operator": "equals", "value": "over-1000" }
+      ],
+      "effect": "show",
+      "target": "finance_approver"
+    }
+  ],
+  "approval_steps": [
+    {
+      "id": "manager-review",
+      "name": "Manager review",
+      "approver_field": "manager_approver",
+      "order": 1
+    },
+    {
+      "id": "finance-review",
+      "name": "Finance review",
+      "approver_field": "finance_approver",
+      "approver_role": null,
+      "order": 2
+    }
+  ]
+}
