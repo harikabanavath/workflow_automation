@@ -13,6 +13,8 @@ Browser -> React/Vite frontend (:5173)
 
 - `apps/frontend`: React + TypeScript UI shell, served by Vite in development.
 - `apps/backend`: FastAPI application with health endpoints and a small API structure ready for workflow APIs.
+- `apps/backend/app/workflow`: Pydantic template models and the in-memory workflow state machine.
+- `apps/backend/schemas/workflow-template.schema.json`: language-neutral JSON Schema for workflow templates.
 - `db/migrations`: SQL migrations for the workflow engine schema.
 - `docker-compose.yml`: local development services and a persistent Postgres volume.
 
@@ -25,6 +27,14 @@ Browser -> React/Vite frontend (:5173)
 - `audit_log` is append-only. Every event belongs to an instance and may optionally point to a step or approval, while still supporting instance-level events.
 
 The migration uses UUID primary keys, JSONB for workflow definitions and runtime payloads, explicit status checks, UTC timestamps, indexes for common engine queries, and foreign keys with conservative delete behavior.
+
+## Workflow template and state machine
+
+Templates contain `fields`, `rules`, and ordered `approval_steps`. Supported field types are `text`, `dropdown`, `file`, and `approver-picker`. The backend models validate field references, dropdown options, approval ordering, and required submission values.
+
+`create_workflow_instance(template, submission)` validates a submission and creates an instance in `submitted`. `transition_state(instance, action, actor=..., comment=...)` validates and applies `submit`, `approve`, `reject`, or `complete` actions. A multi-step approval remains in `pending_approval` until each assigned approver has approved; the final approval moves it to `approved`, after which it can be completed.
+
+Unit tests live in `apps/backend/tests/test_state_machine.py` and cover the happy path, invalid transitions, approver authorization, rejection, multi-step approval ordering, and submission validation.
 
 ## Run locally with Docker Compose
 
