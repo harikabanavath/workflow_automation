@@ -172,6 +172,21 @@ def get_audit_log(instance_id: UUID) -> list[dict[str, Any]]:
     return record.audit
 
 
+@router.get("/approvals/pending", response_model=list[WorkflowInstance])
+def list_pending_approvals(request: Request) -> list[WorkflowInstance]:
+    actor = request.state.actor
+    role = request.state.role
+    pending: list[WorkflowInstance] = []
+    for record in store.instances.values():
+        instance = record.instance
+        if instance.status != WorkflowStatus.PENDING_APPROVAL or instance.current_approval_index is None:
+            continue
+        current = instance.approvals[instance.current_approval_index]
+        if role == Role.ADMIN or current.approver == actor:
+            pending.append(instance)
+    return pending
+
+
 ROLE_RULES: dict[str, set[Role]] = {
     "POST /api/templates": {Role.ADMIN},
     "GET /api/templates": {Role.REQUESTER, Role.APPROVER, Role.ADMIN},
@@ -180,6 +195,7 @@ ROLE_RULES: dict[str, set[Role]] = {
     "POST /api/instances/{instance_id}/approve": {Role.APPROVER, Role.ADMIN},
     "POST /api/instances/{instance_id}/reject": {Role.APPROVER, Role.ADMIN},
     "GET /api/instances/{instance_id}/audit": {Role.APPROVER, Role.ADMIN},
+    "GET /api/approvals/pending": {Role.APPROVER, Role.ADMIN},
 }
 
 
@@ -207,6 +223,7 @@ async def rbac_middleware(request: Request, call_next: Any) -> Any:
         from fastapi.responses import JSONResponse
         return JSONResponse({"detail": "role is not allowed to call this endpoint"}, status_code=403)
     request.state.actor = request.headers.get("X-Actor", role.value)
+    request.state.role = role
     return await call_next(request)
 
 
